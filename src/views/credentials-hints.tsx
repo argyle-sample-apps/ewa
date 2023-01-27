@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import { Footnote, Paragraph, Subheading } from "components/typography";
-import { Modal } from "components/modal";
 import clsx from "clsx";
+import { Paragraph } from "components/typography";
+import { Modal } from "components/modal";
 import { CloseIcon, UnlockIcon } from "components/icons";
 
-export function SamplePasswordButton({
+export const SamplePasswordButton = ({
   showHintsButton,
   showHints,
   onClick,
-}: any) {
+}: any) => {
   if (!showHintsButton) {
     return null;
   }
@@ -16,22 +16,22 @@ export function SamplePasswordButton({
   return (
     <div
       className={clsx(
-        "pointer-events-none absolute top-[26px] left-0 right-0 z-[9999999999] flex items-center",
-        showHints ? "justify-start" : "justify-center"
+        "pointer-events-none absolute top-[25px] z-[9999999999]",
+        showHints ? "left-0" : "left-[70px]"
       )}
     >
       {showHints ? (
         <button
-          className="pointer-events-auto flex items-center rounded-sm bg-now-orangepastel p-1 text-left leading-none"
+          className="pointer-events-auto flex items-center rounded-sm bg-orange-pastel p-1 text-left leading-none"
           onClick={onClick}
         >
-          <div className="text-now-black ml-5 h-3 w-3">
+          <div className="ml-5 h-3 w-3 text-black">
             <CloseIcon />
           </div>
         </button>
       ) : (
         <button
-          className="pointer-events-auto flex items-center rounded-sm bg-now-orangepastel p-1 text-left leading-none"
+          className="pointer-events-auto flex items-center rounded-sm bg-orange-pastel p-1 text-left leading-none"
           onClick={onClick}
         >
           <div className="flex items-center">
@@ -41,7 +41,7 @@ export function SamplePasswordButton({
             <span className="text-[10px] uppercase">test credentials</span>
           </div>
           {showHints && (
-            <div className="ml-2 h-3 w-3 text-now-orangepastel">
+            <div className="ml-2 h-3 w-3 text-orange-pastel">
               <CloseIcon />
             </div>
           )}
@@ -49,7 +49,7 @@ export function SamplePasswordButton({
       )}
     </div>
   );
-}
+};
 
 const credentials = [
   {
@@ -80,38 +80,51 @@ const credentials = [
 ];
 
 type CardPinModalProps = {
-  isOpen: boolean;
+  showHints: boolean;
+  setShowHints: (arg0: boolean) => void;
 };
 
-export function CredentialsHints({ isOpen }: CardPinModalProps) {
+export const CredentialsHints = ({
+  showHints,
+  setShowHints,
+}: CardPinModalProps) => {
   const [copySuccessMessage, setCopySuccessMessage] = useState("");
 
   useEffect(() => {
     if (copySuccessMessage !== "") {
       const timer = setTimeout(() => {
         setCopySuccessMessage("");
-      }, 2000);
+        setShowHints(false);
+      }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [copySuccessMessage, setCopySuccessMessage]);
+  }, [copySuccessMessage, setCopySuccessMessage, setShowHints]);
 
   return (
-    <Modal isOpen={isOpen} className="z-[9999999998] bg-now-orangepastel">
+    <Modal isOpen={showHints} className="z-[9999999998] bg-orange-pastel">
       <div className="mt-6 px-4">
         <div className="flex pb-3">
           <div className="flex-1"></div>
           <div className="flex-1">
-            <Subheading className="min-h-[25px] !text-black">
+            <Paragraph large className="min-h-[50px] !text-black">
               {copySuccessMessage}
-            </Subheading>
+            </Paragraph>
           </div>
+        </div>
+        <div className="mb-2 h-1 w-full bg-orange-pastel">
+          <div
+            className={clsx(
+              "h-1 bg-orange-light transition-all delay-100 duration-700 ease-out",
+              copySuccessMessage !== "" ? "w-full" : "w-0"
+            )}
+          ></div>
         </div>
         <div className="flex pb-3">
           <div className="flex-1"></div>
           <div className="flex-1">
-            <Footnote className="!text-black opacity-40">
+            <Paragraph small className="!text-black opacity-40">
               Tap below to copy
-            </Footnote>
+            </Paragraph>
           </div>
         </div>
         <div className="divide-y divide-black divide-opacity-[.08] border-y border-black border-opacity-[.08]">
@@ -122,9 +135,9 @@ export function CredentialsHints({ isOpen }: CardPinModalProps) {
                   {credential.label}
                 </Paragraph>
                 {credential.note && (
-                  <Footnote className="!text-black opacity-40">
+                  <Paragraph small className="!text-black opacity-40">
                     {credential.note}
-                  </Footnote>
+                  </Paragraph>
                 )}
               </div>
               <div
@@ -144,4 +157,4 @@ export function CredentialsHints({ isOpen }: CardPinModalProps) {
       </div>
     </Modal>
   );
-}
+};

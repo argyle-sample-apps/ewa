@@ -10,12 +10,6 @@ module.exports = {
         destination: "/admin",
         permanent: true,
       },
-      {
-        source: "/paychecknow",
-        destination: "/ewa",
-        permanent: true,
-        basePath: false,
-      },
     ];
   },
 };

@@ -1,28 +1,24 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getAuthOpts } from "../../utils";
 import axios from "axios";
-import { z } from "zod";
+import { getCookie } from "cookies-next";
+import { getAuthOpts } from "../utils";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const userId = getCookie("argyle-x-user-id", { req, res });
   try {
-    const { userId, year } = z
-      .object({
-        userId: z.string(),
-        year: z.string(),
-      })
-      .parse(req.query);
-
     const { headers } = getAuthOpts();
 
     const params = {
       user: userId,
     };
 
+    const year = 2022;
+
     const { data } = await axios.get("/income/payouts/" + year, {
-      baseURL: process.env.BFF_API_URL,
+      baseURL: "https://bff.argyle.com",
       headers: {
         ...headers,
         "x-argyle-is-sandbox": "true",

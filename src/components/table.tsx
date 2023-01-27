@@ -1,10 +1,11 @@
 import clsx from "clsx";
-import { Splitter } from "components/splitter";
 import currency from "currency.js";
 import moment from "moment";
-import { DecorativeIconWrapper } from "./decorative-icon-wrapper";
-import { AddBigIcon, WithdrawBigIcon } from "./icons";
-import { Paragraph, Strong, Subparagraph } from "./typography";
+
+import { AddBigIcon, WithdrawBigIcon, BrandLogo } from "./icons";
+import { Paragraph, Subparagraph } from "./typography";
+import { BRAND_NAME } from "consts";
+import { Splitter } from "components/splitter";
 
 export type TableSectionProps = {
   label: string;
@@ -41,22 +42,20 @@ const Icon = ({
   label,
   initials,
   logo,
-  index
+  index,
 }: IconProps) => {
-  if (label == "Your GoodLoans balance") {
-    // Small hack to not need any more very specialised parameters
+  if (label == `Your ${BRAND_NAME} balance`) {
+    // Small hack to not need any more very specialized parameters
     // or for non-UI components to know UI details
     return (
       <div className="mr-4">
-        <DecorativeIconWrapper className="brand-gradient relative h-11 w-11 rounded-full">
-          <Strong className="text-center !text-now-darkest">now</Strong>
-        </DecorativeIconWrapper>
+        <BrandLogo />
       </div>
     );
   }
 
   if (initials) {
-    const colors = ["bg-now-green", "bg-now-orange", "bg-now-purple"];
+    const colors = ["bg-green", "bg-orange", "bg-purple"];
     const color = colors[(index as number) % 3];
 
     return (
@@ -88,7 +87,7 @@ export const TableRow = ({
   isAddIcon,
   initials,
   isMinimal,
-  index
+  index,
 }: TableRowProps & InheritRowProps) => {
   const useIcons = isAddIcon !== undefined;
   const showIcon = !isMinimal && (logo || initials || useIcons);
@@ -155,7 +154,7 @@ export function transactionsToSections(transactions: any[]) {
       label: transaction.employer || "",
       value: currency(transaction.amount, { precision: 0 }).format(),
       logo: transaction.logo,
-      time: datetime.format("HH:mm")
+      time: datetime.format("HH:mm"),
     };
 
     let date = moment(datetime);
@@ -176,7 +175,7 @@ export function transactionsToSections(transactions: any[]) {
       let timestamp = Number(sectionKey);
       return {
         label: moment.unix(timestamp).format("MMMM D"),
-        rows: sectionsObj[timestamp] as TableRowProps[]
+        rows: sectionsObj[timestamp] as TableRowProps[],
       };
     });
 

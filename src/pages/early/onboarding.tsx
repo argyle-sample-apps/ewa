@@ -1,9 +1,10 @@
 import { useState, useEffect, ReactElement } from "react";
 import clsx from "clsx";
 import Link from "next/link";
-import WithBottomNavigation from "layouts/with-bottom-navigation";
 import { useRouter } from "next/router";
-import { useGlobalStore } from "stores/global";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
+import Fullscreen from "layouts/fullscreen";
 import { useProfile } from "hooks/useProfile";
 import { useAccounts } from "hooks/useAccounts";
 import { useEarlyPay } from "hooks/useEarlyPay";
@@ -11,46 +12,41 @@ import {
   Heading,
   Paragraph,
   Subheading,
-  Subparagraph
+  Subparagraph,
 } from "components/typography";
 import { Button, InlineButton } from "components/button";
 import { Avatar } from "components/avatar";
-import { Loader } from "components/loader";
+import { Loader, LoadingError } from "components/loader";
 import { ArgyleLink } from "components/argyle-link";
 import { Criteria } from "components/criteria";
-import { AddBigIcon, LeftArrowIcon, LogotypeIcon } from "components/icons";
+import { AddBigIcon, LeftArrowIcon, BrandLogo } from "components/icons";
 import { formatCurrency } from "utils";
-import { Account } from "models/account";
-import { useQueryClient } from "@tanstack/react-query";
+import { BRAND_NAME } from "consts";
+import { uniqueAccountsAtom } from "stores/global";
 
 export default function EarlyPayOnboardingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const uniqueAccounts = useAtomValue(uniqueAccountsAtom);
 
   const [linkLoading, setLinkLoading] = useState(false);
   const [linkInstance, setLinkInstance] = useState<any>();
 
-  const activeAccounts = useGlobalStore(
-    (state) => state.earlypay.activeAccounts
-  );
-
   const {
     data: profile,
     isLoading: isProfileLoading,
-    isError: isProfileError
+    isError: isProfileError,
   } = useProfile();
   const {
     data: accounts,
     isLoading: isAccountsLoading,
-    isError: isAccountsError
+    isError: isAccountsError,
   } = useAccounts();
   const {
     data: decision,
     isLoading: isEarlyPayLoading,
-    isError: isEarlyPayError
-  } = useEarlyPay({
-    activeAccounts
-  });
+    isError: isEarlyPayError,
+  } = useEarlyPay();
 
   const handleLinkOpen = () => {
     if (!linkInstance) {
@@ -72,59 +68,45 @@ export default function EarlyPayOnboardingPage() {
     queryClient.invalidateQueries(["early-pay"]);
   };
 
-  function getSortedAccounts(): any[] {
-    // display connected accounts first
-    const isActive = (account: Account) =>
-      Number(activeAccounts.includes(account.id));
-    const sorted = [...(accounts?.connected ? accounts.connected : [])].sort(
-      (a, b) => isActive(b) - isActive(a)
-    );
-
-    return sorted;
-  }
-
   if (isProfileLoading || isAccountsLoading || isEarlyPayLoading) {
-    return <Loader />;
+    return <Loader title="Calculating, please wait..." />;
   }
 
   if (isProfileError || isAccountsError || isEarlyPayError) {
-    return <div>An error occured.</div>;
+    return <LoadingError />;
   }
-
-  const sortedAccounts = getSortedAccounts();
-
-  const initial = formatCurrency(decision?.combined?.initial);
-  const daily = formatCurrency(decision?.combined?.daily);
-  const allActive = activeAccounts.length === accounts?.connected.length;
 
   return (
     <>
       <ArgyleLink
-        payDistributionUpdateFlow={false}
-        linkItemId={null}
-        onClose={() => handleLinkClose()}
         onLinkInit={(link) => {
           setLinkInstance(link);
         }}
+        customConfig={{
+          onClose: () => handleLinkClose(),
+        }}
       />
+
       <div className="px-4 pt-6 pb-12">
         <div className="mb-10 flex items-center justify-between">
-          {activeAccounts.length > 0 ? (
-            <Link href="root">
-              <a>
-                <button
-                  className="block h-8 w-8 p-1 text-now-grey"
-                  onClick={() => router.back()}
-                >
-                  <LeftArrowIcon />
-                </button>
-              </a>
-            </Link>
-          ) : (
-            <div className="w-[175px]">
-              <LogotypeIcon />
-            </div>
-          )}
+          {
+            /* activeAccounts.length > 0 */ !!accounts ? (
+              <Link href="root">
+                <a>
+                  <button
+                    className="block h-8 w-8 p-1 text-gray"
+                    onClick={() => router.back()}
+                  >
+                    <LeftArrowIcon />
+                  </button>
+                </a>
+              </Link>
+            ) : (
+              <div className="w-[175px]">
+                <BrandLogo />
+              </div>
+            )
+          }
           <Link href="/settings">
             <a>
               <Avatar src={profile?.picture_url} />
@@ -132,21 +114,21 @@ export default function EarlyPayOnboardingPage() {
           </Link>
         </div>
         <Heading className="mb-3 w-3/4">
-          {allActive && initial && daily
+          {/*  {allActive && initial && daily
             ? `Add more employers to increase early pay`
             : decision.approved
             ? `Get up to ${initial} now and up to ${daily} every day`
-            : `Get up to 70% of your income as soon as you earn it`}
+            : `Get up to 70% of your income as soon as you earn it`} */}
         </Heading>
         <Paragraph className="mb-6">
           Don’t wait weeks or months for your paycheck. Direct your income to
-          GoodLoans and use your hard-earned cash right away.
+          {BRAND_NAME} and use your hard-earned cash right away.
         </Paragraph>
-        <Criteria view="compact" />
+        <Criteria />
         <Subheading className="mt-6 mb-4 w-3/4">
           <span>Connected employers:</span>
         </Subheading>
-        {sortedAccounts.map((account) => {
+        {/* {sortedAccounts.map((account) => {
           const linkItem = account.link_item_details;
           const isActive = activeAccounts.includes(account.id);
 
@@ -167,18 +149,16 @@ export default function EarlyPayOnboardingPage() {
               <div className={clsx("text-left", !isActive && "py-2.5")}>
                 <Subheading>{linkItem.name}</Subheading>
                 {isActive && (
-                  <Subparagraph className="!text-now-green">
-                    Connected
-                  </Subparagraph>
+                  <Subparagraph className="!text-green">Connected</Subparagraph>
                 )}
               </div>
             </button>
           );
-        })}
+        })} */}
         <div className={clsx("mt-3", linkLoading && "animate-pulse")}>
           <InlineButton
             onClick={handleLinkOpen}
-            className="flex items-center !text-now-purple"
+            className="flex items-center !text-purple"
           >
             <span className="mr-3 p-1">
               <AddBigIcon />
@@ -190,13 +170,9 @@ export default function EarlyPayOnboardingPage() {
           <Button
             as="button"
             onClick={() => {
-              if (!decision.approved) {
-                router.push("/early/rejected");
-              } else {
-                router.push("/early/confirm");
-              }
+              router.push("/early/decision");
             }}
-            disabled={allActive}
+            /*  disabled={allActive} */
           >
             Set up early pay
           </Button>
@@ -207,5 +183,9 @@ export default function EarlyPayOnboardingPage() {
 }
 
 EarlyPayOnboardingPage.getLayout = function getLayout(page: ReactElement) {
-  return <WithBottomNavigation>{page}</WithBottomNavigation>;
+  return (
+    <Fullscreen navigation bg="green">
+      {page}
+    </Fullscreen>
+  );
 };

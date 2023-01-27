@@ -1,4 +1,7 @@
 import currency from "currency.js";
+import { deleteCookie } from "cookies-next";
+import axios, { AxiosRequestConfig } from "axios";
+import { Account } from "models/account";
 
 export function isStandaloneMode() {
   if (typeof window !== "undefined") {
@@ -132,4 +135,41 @@ export const fillWithRandom = (max: number, total: number, len: number = 4) => {
 
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export const getBasePath = (path: string) => {
+  return path.split("/")[1];
+};
+
+export const clearCookies = () => {
+  const cookies = [
+    "argyle-x-user-token",
+    "argyle-x-user-id",
+    "argyle-x-account-id",
+  ];
+  cookies.forEach((cookie) => deleteCookie(cookie));
+};
+
+// fetch all results using pagination
+export async function fetchAll<T>(
+  url: string,
+  config: AxiosRequestConfig
+): Promise<T[]> {
+  const fetch = async (url: string) => {
+    const response = await axios.get<{ next: string | null; results: T[] }>(
+      url,
+      config
+    );
+    return response.data;
+  };
+
+  let data = await fetch(url);
+  let results: T[] = [...data.results];
+
+  while (data.next) {
+    data = await fetch(data.next);
+    results = [...results, ...data.results];
+  }
+
+  return results;
 }

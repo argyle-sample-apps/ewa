@@ -1,14 +1,13 @@
 import { ReactElement, useEffect, useState } from "react";
 import clsx from "clsx";
 import CurrencyInput from "react-currency-input-field";
-import Fullscreen from "layouts/fullscreen";
+import { setCookie } from "cookies-next";
 import { useRouter } from "next/router";
-import { Button } from "components/button";
-import { Heading, Paragraph } from "components/typography";
-import { Splitter } from "components/splitter";
-import { setCookies } from "cookies-next";
-import { useConfig } from "hooks/useConfig";
 import { Tab } from "@headlessui/react";
+import Fullscreen from "layouts/fullscreen";
+import { Button, buttonColors } from "components/button";
+import { Heading, Paragraph } from "components/typography";
+import { useConfig } from "hooks/useConfig";
 
 type ZeroOne = 0 | 1;
 
@@ -18,7 +17,7 @@ function getKeyByValue(object: any, value: string) {
 
 const CYCLES = {
   0: "month",
-  1: "week"
+  1: "week",
 };
 
 export default function AdminPage() {
@@ -45,6 +44,7 @@ export default function AdminPage() {
       setPayCycleAsNumber(payCycleAsNumber);
       setDurationCycleAsNumber(durationCycleAsNumber);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async () => {
@@ -55,32 +55,31 @@ export default function AdminPage() {
       pay: pay,
       duration: duration,
       pay_cycle: payCycle,
-      duration_cycle: durationCycle
+      duration_cycle: durationCycle,
     };
 
     const stringified = JSON.stringify(config);
 
-    setCookies("argyle-x-session", stringified, { maxAge: 60 * 6 * 24 });
+    setCookie("argyle-x-session", stringified, { maxAge: 60 * 6 * 24 });
 
-    router.push("/onboarding/connect");
+    router.push("/onboarding");
   };
 
   return (
-    <div className="px-4 pt-8">
-      <Heading className="mb-3 w-2/3">Early pay configuration</Heading>
-      <Paragraph className="mb-6">
+    <div className="flex h-full flex-col px-5 pb-5">
+      <Heading className="mb-3 mt-[60px]">Before you begin</Heading>
+      <Paragraph large className="text-gray-T50">
         Set the salary and job tenure values that will be used in the demo to
         determine if the applicant is eligible for early pay.
       </Paragraph>
-      <Splitter />
-      <div className="mt-4">
-        <label className="mb-6 block">
-          <span className="text-sm font-normal text-gray-400">
-            Applicant earns at least:
-          </span>
-          <div className="flex items-baseline justify-between">
+      <div className="mt-5">
+        <label className="mb-4 flex justify-between bg-gray-T04 pl-[12px] pr-1.5">
+          <div className="">
+            <span className="text-xs font-normal text-gray-T40">
+              Minimum income
+            </span>
             <CurrencyInput
-              className="mt-1 mr-4 block w-24 border-0 border-b-2 border-gray-200 px-0.5 focus:border-black focus:ring-0"
+              className="mr-4 block w-24 border-0 bg-transparent px-0.5 pt-0 font-sans text-[20px] focus:border-none focus:ring-0"
               autoFocus
               allowDecimals={false}
               placeholder="$500"
@@ -91,68 +90,71 @@ export default function AdminPage() {
                 setPay(value);
               }}
             />
-            <span> per </span>
-            <Tab.Group
-              selectedIndex={payCycleAsNumber}
-              onChange={setPayCycleAsNumber}
-            >
-              <Tab.List className="ml-4 space-x-3 rounded-full bg-gray-100 p-1.5">
-                {Object.values(CYCLES).map((cycle) => (
-                  <Tab
-                    key={cycle}
-                    className={({ selected }) =>
-                      clsx(
-                        "rounded-full py-1 px-3",
-                        selected ? "bg-now-darkest text-white" : "text-black"
-                      )
-                    }
-                  >
-                    {cycle}
-                  </Tab>
-                ))}
-              </Tab.List>
-            </Tab.Group>
           </div>
+          <Tab.Group
+            selectedIndex={payCycleAsNumber}
+            onChange={setPayCycleAsNumber}
+          >
+            <Tab.List className="flex">
+              <Tab
+                className={({ selected }) =>
+                  clsx("px-1.5", selected ? "text-black" : "text-gray-T40")
+                }
+              >
+                Monthly
+              </Tab>
+              <Tab
+                className={({ selected }) =>
+                  clsx("px-1.5", selected ? "text-black" : "text-gray-T40")
+                }
+              >
+                Weekly
+              </Tab>
+            </Tab.List>
+          </Tab.Group>
         </label>
-        <label className="mb-6 block">
-          <span className="text-sm font-normal text-gray-400">
-            Applicant’s job tenure is at least:
-          </span>
-          <div className="flex items-baseline justify-between">
+        <label className="mb-4 flex justify-between bg-gray-T04 pl-[12px] pr-1.5">
+          <div>
+            <span className="text-xs font-normal text-gray-T40">
+              Minimum job tenure
+            </span>
+
             <input
               type="number"
               className={clsx(
-                "mt-1 mr-4 block w-24 border-0 border-b-2 border-gray-200 px-0.5 focus:border-black focus:ring-0"
+                "mr-4 block w-24 border-0 bg-transparent px-0.5 pt-0 font-sans text-[20px] focus:border-none focus:ring-0"
               )}
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
             />
-            <Tab.Group
-              selectedIndex={durationCycleAsNumber}
-              onChange={setDurationCycleAsNumber}
-            >
-              <Tab.List className="ml-4 space-x-3 rounded-full bg-gray-100 p-1.5">
-                {Object.values(CYCLES).map((cycle) => (
-                  <Tab
-                    key={cycle}
-                    className={({ selected }) =>
-                      clsx(
-                        "rounded-full py-1 px-3",
-                        selected ? "bg-now-darkest text-white" : "text-black"
-                      )
-                    }
-                  >
-                    {cycle}s
-                  </Tab>
-                ))}
-              </Tab.List>
-            </Tab.Group>
           </div>
+          <Tab.Group
+            selectedIndex={durationCycleAsNumber}
+            onChange={setDurationCycleAsNumber}
+          >
+            <Tab.List className="flex">
+              <Tab
+                className={({ selected }) =>
+                  clsx("px-1.5", selected ? "text-black" : "text-gray-T40")
+                }
+              >
+                Months
+              </Tab>
+              <Tab
+                className={({ selected }) =>
+                  clsx("px-1.5", selected ? "text-black" : "text-gray-T40")
+                }
+              >
+                Weeks
+              </Tab>
+            </Tab.List>
+          </Tab.Group>
         </label>
       </div>
-      <Splitter />
-      <div className={clsx("mt-6 flex items-center")}>
-        <Button onClick={handleSubmit}>Submit</Button>
+      <div className={clsx("mt-auto flex")}>
+        <Button color={buttonColors.GREEN} onClick={handleSubmit}>
+          Start demo
+        </Button>
       </div>
     </div>
   );

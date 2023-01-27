@@ -27,6 +27,9 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -moz-font-feature-settings: "ss08";
+  -webkit-font-feature-settings: "ss08";
+  font-feature-settings: "ss08";
 }
 
 html,
@@ -79,35 +82,49 @@ body,
   background: #f3f4f6;
 }
 
-.brand-gradient {
-  background: linear-gradient(
-    234.62deg,
-    #e3f5f9 6.78%,
-    #fed88a 50.42%,
-    #c2c1f2 86.7%
-  );
+/* slider */
+.horizontal-slider {
+  width: 100%;
+  max-width: 335px;
+  height: 32px;
+  margin: auto;
 }
-
-.loader {
-  border-top-color: #696ee3;
-  -webkit-animation: spinner 1.5s linear infinite;
-  animation: spinner 1.5s linear infinite;
+.custom-thumb {
+  cursor: pointer;
+  position: absolute;
+  z-index: 100;
+  background: #e6e6e6;
+  border-radius: 100%;
+  display: block;
 }
-
-@-webkit-keyframes spinner {
-  0% {
-    -webkit-transform: rotate(0deg);
-  }
-  100% {
-    -webkit-transform: rotate(360deg);
-  }
+.value-now {
+  top: -26px;
+  position: absolute;
+  opacity: 0;
+  font-size: 14px;
+  transition: all 150ms;
 }
-
-@keyframes spinner {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.custom-thumb:hover .value-now {
+  opacity: 0.5;
+}
+.custom-thumb.active {
+  background-color: grey;
+}
+.custom-track {
+  position: relative;
+  background: rgba(0, 0, 0, 0.12);
+}
+.custom-track.example-track-0 {
+  background: rgba(0, 0, 0, 0.12);
+}
+.horizontal-slider .custom-track {
+  top: 20px;
+  height: 2px;
+}
+.horizontal-slider .custom-thumb {
+  top: 4px;
+  width: 32px;
+  outline: none;
+  height: 32px;
+  line-height: 32px;
 }

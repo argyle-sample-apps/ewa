@@ -1,7 +1,7 @@
 import clsx from "clsx";
+import { AddSmallIcon } from "./icons";
 import { InlineButton } from "components/button";
 import { INCOME_FILTER_ALL } from "consts";
-import { AddSmallIcon } from "./icons";
 
 type SelectedSource = {
   selectedSource: string;
@@ -32,8 +32,8 @@ function SourceButton({
       className={clsx(
         "flex flex-none items-center rounded-full px-3 py-1 !text-sm",
         selectedSource === source
-          ? "!bg-gray-100 !text-now-darkest"
-          : "!text-now-grey"
+          ? "!bg-gray-100 !text-gray-darkest"
+          : "!text-gray"
       )}
     >
       {color && (
@@ -74,7 +74,7 @@ export function IncomeSourcePicker({
       {onLinkOpen && (
         <InlineButton
           onClick={onLinkOpen}
-          className="flex items-center !text-sm !font-medium !text-now-purple"
+          className="flex items-center !text-sm !font-medium !text-purple"
         >
           <div className="mr-1">
             <AddSmallIcon />

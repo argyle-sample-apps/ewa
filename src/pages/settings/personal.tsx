@@ -1,16 +1,36 @@
 import type { ReactElement } from "react";
-import WithBackButton from "layouts/with-back-button";
+import { GetServerSideProps, GetServerSidePropsContext } from "next";
+import { getCookie } from "cookies-next";
+import Fullscreen from "layouts/fullscreen";
 
-import { PersonalInfo } from "views/personal-info";
+import { ProfileInfo } from "views/profile-info";
+import { DepositInfo } from "views/deposit-info";
 
 export default function PersonalSettingsPage() {
   return (
     <div className="px-4">
-      <PersonalInfo />
+      <ProfileInfo />
+      <DepositInfo />
     </div>
   );
 }
 
+export const getServerSideProps: GetServerSideProps = async (
+  ctx: GetServerSidePropsContext
+) => {
+  const userId = getCookie("argyle-x-user-id", ctx);
+
+  if (!userId) {
+    return {
+      redirect: { destination: "/admin", permanent: false },
+    };
+  }
+
+  return {
+    props: {},
+  };
+};
+
 PersonalSettingsPage.getLayout = function getLayout(page: ReactElement) {
-  return <WithBackButton>{page}</WithBackButton>;
+  return <Fullscreen back>{page}</Fullscreen>;
 };
