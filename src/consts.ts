@@ -6,7 +6,7 @@ export const META_URL = "https://sampleapps.argyle.com/ewa";
 export const META_DESCRIPTION =
   "Implement an earned wage access (EWA) solution for your customers.";
 export const META_IMAGE =
-  "https://res.cloudinary.com/argyle-media/image/upload/v1666279763/argyle-x/meta/EWA-meta-img.png";
+  "https://res.cloudinary.com/argyle-media/image/upload/v1675091244/argyle-x/meta/EWA_cover.png";
 
 export const INCOME_FILTER_ALL = "all";
 export const CHECKLIST_ITEMS = [

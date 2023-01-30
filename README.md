@@ -1,10 +1,8 @@
-# GoodLoans
+![ewa github](public/assets/EWA_cover.png)
 
-![cover](public/assets/paycheck-now-cover.png)
+With EWA (Earned Wage Access) App, you can receive information about your customer’s already-earned income and deduct early payments directly from the customer’s payroll. This app demonstrates how you can implement an earned wage access solution with Argyle.
 
-With GoodLoans, you can receive information about your customer’s already-earned income and deduct early payments directly from the customer’s payroll. GoodLoans demonstrates how you can implement an earned wage access solution with Argyle.
-
-You can try out the GoodLoans demo [here](https://prebuilds.argyle.com/ewa) and learn more about the features [here](https://docs.argyle.com/guides/docs/ewa).
+You can try out the EWA App demo [here](https://sampleapps.argyle.com/ewa) and learn more about the features [here](https://docs.argyle.com/guides/docs/ewa-app).
 
 ## Getting Started
 
