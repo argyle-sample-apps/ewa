@@ -2,8 +2,13 @@ import clsx from "clsx";
 
 type SplitterProps = {
   className?: string;
+  color?: string;
 };
 
-export const Splitter = ({ className }: SplitterProps) => {
-  return <div className={clsx("flex h-px bg-gray-100", className)} />;
+export const Splitter = ({ className, color }: SplitterProps) => {
+  return (
+    <div
+      className={clsx("flex h-px", className, color ? color : "bg-gray-T12")}
+    />
+  );
 };

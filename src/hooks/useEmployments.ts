@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
-import { useGlobalStore } from "stores/global";
+import { getCookie } from "cookies-next";
 import { Employment } from "models/employment";
 
 const fetchEmploymentsByUserId = async (userId: string) => {
@@ -10,7 +10,7 @@ const fetchEmploymentsByUserId = async (userId: string) => {
 };
 
 export function useEmployments() {
-  const userId = useGlobalStore((state) => state.userId);
+  const userId = getCookie("argyle-x-user-id") as string;
 
   return useQuery(["employments", userId], () =>
     fetchEmploymentsByUserId(userId)

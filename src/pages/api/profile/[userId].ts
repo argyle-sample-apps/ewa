@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
 import { z } from "zod";
+import { getCookie } from "cookies-next";
 import { getAuthOpts } from "../utils";
 
 export default async function handler(
@@ -8,11 +9,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
-    const { userId } = z
-      .object({
-        userId: z.string(),
-      })
-      .parse(req.query);
+    const userId = getCookie("argyle-x-user-id") as string;
 
     const { headers } = getAuthOpts();
 

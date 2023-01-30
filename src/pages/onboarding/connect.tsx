@@ -1,75 +1,89 @@
-import { ReactElement, useEffect, useState } from "react";
+import { ReactElement } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/router";
-import WithBackButton from "layouts/with-back-button";
-
+import Fullscreen from "layouts/fullscreen";
 import { Button } from "components/button";
-import { Footnote, Heading, Paragraph } from "components/typography";
-import { DecorativeIconWrapper } from "components/decorative-icon-wrapper";
+import { Heading, Paragraph } from "components/typography";
 import { PlusIcon } from "components/icons";
-import { useGlobalStore } from "stores/global";
 import { ArgyleLink } from "components/argyle-link";
+import { Checklist, variants } from "components/checkbox";
+import { CHECKLIST_ITEMS } from "consts";
+import { useConfig } from "hooks/useConfig";
+import { formatCurrency } from "utils";
+import { useLink } from "hooks/useLink";
 
 export default function ConnectPage() {
-  const [linkLoading, setLinkLoading] = useState(false);
-  const [linkInstance, setLinkInstance] = useState<any>();
-
-  const getAccountId = useGlobalStore((state) => state.getAccountId);
   const router = useRouter();
+  const config = useConfig();
 
-  const handleLinkOpen = () => {
-    if (!linkInstance) {
-      return setLinkLoading(true);
-    }
+  const {
+    openLink,
+    isLinkLoading,
+    isLinkOpen,
+    setLinkInstance,
+    setIsLinkOpen,
+  } = useLink();
 
-    linkInstance.open();
+  const onClose = () => {
+    setIsLinkOpen(false);
+    router.replace("/early/decision");
   };
 
-  useEffect(() => {
-    if (linkInstance && linkLoading === true) {
-      setLinkLoading(false);
-      linkInstance.open();
-    }
-  }, [linkLoading, linkInstance]);
-
-  const handleLinkClose = () => {
-    const accountId = getAccountId();
-
-    if (accountId) {
-      router.push("/early");
-    }
-  };
+  const checklistItems = [
+    {
+      id: CHECKLIST_ITEMS[0].id,
+      text: CHECKLIST_ITEMS[0].text,
+      variant: variants.CHECKED,
+    },
+    {
+      id: CHECKLIST_ITEMS[1].id,
+      text: CHECKLIST_ITEMS[1].text,
+    },
+    {
+      id: CHECKLIST_ITEMS[2].id,
+      text: `Job tenure at least ${config.duration} ${config.duration_cycle}s`,
+    },
+    {
+      id: CHECKLIST_ITEMS[3].id,
+      text: `Earn at least ${formatCurrency(config.pay)}/${config.pay_cycle}`,
+    },
+    {
+      id: CHECKLIST_ITEMS[4].id,
+      text: CHECKLIST_ITEMS[4].text,
+    },
+  ];
 
   return (
     <>
       <ArgyleLink
-        payDistributionUpdateFlow={false}
-        linkItemId={null}
-        onClose={() => handleLinkClose()}
+        customConfig={{
+          onClose: onClose,
+        }}
         onLinkInit={(link) => {
           setLinkInstance(link);
         }}
       />
-      <div className="px-4 pr-[92px]">
-        <DecorativeIconWrapper>
-          <PlusIcon />
-        </DecorativeIconWrapper>
-        <Heading className="mb-3">Let’s set up early pay</Heading>
-        <Paragraph className="mb-6">
-          Connect to all the places you work to maximize your daily payouts.
-        </Paragraph>
-        <div className={clsx("flex", linkLoading && "animate-pulse")}>
-          <Button onClick={handleLinkOpen}>Connect your work</Button>
+      {!isLinkOpen && (
+        <div className="flex h-full flex-col p-5">
+          <div className="mt-auto">
+            <PlusIcon />
+            <Heading className="mb-4 mt-4">
+              Connect all the places you work at to maximize your payouts
+            </Heading>
+            <Paragraph large className="mb-4 text-gray-T50">
+              Fulfill the conditions listed below.
+            </Paragraph>
+          </div>
+          <Checklist items={checklistItems} className="mb-12" />
+          <div className={clsx(isLinkLoading && "animate-pulse")}>
+            <Button onClick={openLink}>Connect your work</Button>
+          </div>
         </div>
-        <Footnote className="mt-6">
-          On the next screen, you will be able to search for your employer, work
-          platform, or the payroll company that your employer uses to pay you.
-        </Footnote>
-      </div>
+      )}
     </>
   );
 }
 
 ConnectPage.getLayout = function getLayout(page: ReactElement) {
-  return <WithBackButton>{page}</WithBackButton>;
+  return <Fullscreen back>{page}</Fullscreen>;
 };

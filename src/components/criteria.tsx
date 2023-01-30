@@ -1,25 +1,19 @@
+import { Loader, LoadingError } from "./loader";
+import { PlatformIcon } from "./platform-icon";
+import { AddMoreAccountsButton } from "./add-more-accounts-button";
 import { useAccounts } from "hooks/useAccounts";
 import { useConfig } from "hooks/useConfig";
 import { useEarlyPay } from "hooks/useEarlyPay";
-import { useGlobalStore } from "stores/global";
+import { Checklist, variants } from "components/checkbox";
 import { formatCurrency } from "utils";
-import { Checkbox } from "./checkbox";
+import { CHECKLIST_ITEMS } from "consts";
 
-type CriteriaProps = {
-  view?: "default" | "compact";
-};
-
-export const Criteria = ({ view = "default" }: CriteriaProps) => {
-  const activeAccounts = useGlobalStore(
-    (state) => state.earlypay.activeAccounts
-  );
+export const Criteria = () => {
   const {
     data: decision,
     isLoading: isEarlyPayLoading,
     isError: isEarlyPayError,
-  } = useEarlyPay({
-    activeAccounts,
-  });
+  } = useEarlyPay();
   const {
     data: accounts,
     isLoading: isAccountsLoading,
@@ -28,46 +22,57 @@ export const Criteria = ({ view = "default" }: CriteriaProps) => {
   const config = useConfig();
 
   if (isAccountsLoading || isEarlyPayLoading) {
-    return null;
+    return <Loader />;
   }
 
   if (isEarlyPayError || isAccountsError) {
-    return <div>An error has occured. Try again</div>;
+    return <LoadingError />;
   }
 
-  if (view === "compact") {
-    return (
-      <div>
-        <Checkbox
-          label={`Job tenure at least ${config.duration} ${config.duration_cycle}s`}
-          checked={decision.criteria.duration}
-        />
-        <Checkbox
-          label={`Earn at least ${formatCurrency(config.pay)} per ${
-            config.pay_cycle
-          }`}
-          checked={decision.criteria.pay}
-        />
-      </div>
-    );
-  } else {
-    return (
-      <div>
-        <Checkbox
-          label={`Job tenure at least ${config.duration} ${config.duration_cycle}s`}
-          checked={decision.criteria.duration}
-        />
-        <Checkbox
-          label={`Earn at least ${formatCurrency(config.pay)}
-           per ${config.pay_cycle}`}
-          checked={decision.criteria.pay}
-        />
-        <Checkbox label="Connect your work account" checked={true} />
-        <Checkbox
-          label="Direct your income to GoodLoans"
-          checked={accounts.isPdConfigured}
-        />
-      </div>
-    );
-  }
+  const AccountList = () => (
+    <div className="ml-7 flex">
+      {accounts.connected.map((account) => {
+        const linkItem = account.link_item_details;
+        return (
+          <div key={account.id} className={"flex items-center pr-2"}>
+            <PlatformIcon src={linkItem.logo_url} alt={linkItem.name} />
+          </div>
+        );
+      })}
+      <AddMoreAccountsButton />
+    </div>
+  );
+
+  const checklistItems = [
+    {
+      id: CHECKLIST_ITEMS[0].id,
+      text: CHECKLIST_ITEMS[0].text,
+      variant: variants.CHECKED,
+    },
+    {
+      id: CHECKLIST_ITEMS[1].id,
+      text: CHECKLIST_ITEMS[1].text,
+      variant: variants.CHECKED,
+      other: <AccountList />,
+    },
+    {
+      id: CHECKLIST_ITEMS[2].id,
+      text: `Job tenure at least ${config.duration} ${config.duration_cycle}s`,
+      variant: decision.criteria.duration ? variants.CHECKED : variants.ERROR,
+    },
+    {
+      id: CHECKLIST_ITEMS[3].id,
+      text: `Earn at least ${formatCurrency(config.pay)} per ${
+        config.pay_cycle
+      }`,
+      variant: decision.criteria.pay ? variants.CHECKED : variants.ERROR,
+    },
+    {
+      id: CHECKLIST_ITEMS[4].id,
+      text: CHECKLIST_ITEMS[4].text,
+      variant: accounts.isPdConfigured ? variants.CHECKED : variants.UNCHECKED,
+    },
+  ];
+
+  return <Checklist items={checklistItems} className="mb-5" />;
 };

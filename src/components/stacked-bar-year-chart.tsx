@@ -28,12 +28,12 @@ function CustomTooltip({ payload, label, active }: any) {
               className="mr-2 h-2 w-2 rounded-full"
               style={{ backgroundColor: p.color }}
             />
-            <Footnote className="!text-now-darkest">
+            <Footnote className="!text-gray-darkest">
               {currency(p.value).format()}
             </Footnote>
           </div>
         ))}
-        <Footnote className="!text-now-grey">{label}</Footnote>
+        <Footnote className="!text-gray">{label}</Footnote>
       </div>
     );
   }

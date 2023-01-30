@@ -1,23 +1,31 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getCookie } from "cookies-next";
-import qs from "qs";
-import { getAuthOpts } from "../utils";
 import {
   parseISO,
   formatISO,
   subMonths,
   startOfMonth,
-  endOfMonth,
   differenceInMonths,
-  getDate,
-  getDaysInMonth,
 } from "date-fns";
-import { BasePay } from "models/base-pay";
 import axios from "axios";
-import { z } from "zod";
+import { getAuthOpts } from "../utils";
+import { BasePay } from "models/base-pay";
 import { Account } from "models/account";
 import { Employment } from "models/employment";
 import { Payout } from "models/payout";
+
+export type Decision = {
+  approved?: boolean;
+  oneTime: any[];
+  onDemand: any[];
+  monthly: number;
+  durations: any[];
+  criteria: {
+    duration: boolean;
+    pay: boolean;
+  };
+  combined?: any;
+};
 
 async function getEmployments(userId: string): Promise<Employment[]> {
   const { headers } = getAuthOpts();
@@ -92,18 +100,6 @@ export async function getAccounts(userId: string): Promise<Account[]> {
   return connected;
 }
 
-function getPayoutAmounts(monthly: number) {
-  const today = new Date();
-  const factorOfPayCycle = getDate(today) / getDaysInMonth(today);
-  const initialPayout = factorOfPayCycle * monthly;
-  const dailyPayout = monthly / getDaysInMonth(today);
-
-  return {
-    initial: initialPayout,
-    daily: dailyPayout,
-  };
-}
-
 export function toMonthlyPay(pay: BasePay) {
   const { period, amount } = pay;
   const decimal = Number(amount);
@@ -146,19 +142,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const session = getCookie("argyle-x-session", { req, res }) as string;
+  const userId = getCookie("argyle-x-user-id", { req, res }) as string;
+
   try {
-    const { userId } = z
-      .object({
-        userId: z.string(),
-      })
-      .parse(req.query);
-
-    const { a } = qs.parse(req.query as any);
-    const activeAccounts = (a as string[]) || [];
-
-    const cookie = getCookie("argyle-x-session", { req, res }) as string;
-
-    const rawConfig = JSON.parse(cookie);
+    const rawConfig = JSON.parse(session);
     const config = getNormalizedConfig(rawConfig);
 
     const accounts = await getAccounts(userId);
@@ -173,41 +161,19 @@ export default async function handler(
       !userEmployments.length ||
       !userPayouts.length
     ) {
-      console.log("accs", accounts);
-      console.log("employments", userEmployments);
-      console.log("payouts", userPayouts);
       return res.status(503).json({ error: "Please retry later" });
     }
 
-    type Data = {
-      monthly: number;
-      durations: any[];
-      combined: {
-        initial: number;
-        daily: number;
-      };
-      payouts: any;
-      criteria: {
-        duration: boolean;
-        pay: boolean;
-      };
-    };
-
-    const data: Data = {
+    const data: Decision = {
+      oneTime: [],
+      onDemand: [],
       monthly: 0,
       durations: [],
-      combined: {
-        initial: 0,
-        daily: 0,
-      },
-      payouts: {},
       criteria: {
         duration: false,
         pay: false,
       },
     };
-
-    const isActive = (account: Account) => activeAccounts.includes(account.id);
 
     const linkItems = await Promise.all(
       accounts.map((account) => {
@@ -223,22 +189,26 @@ export default async function handler(
       const payouts = userPayouts.filter((up) => up.account === account.id);
 
       if (linkItem.kind === "employer" || linkItem.kind === "platform") {
+        // one time payment
         const hireDate = parseISO(employment.hire_datetime);
         const duration = differenceInMonths(new Date(), hireDate);
 
         const pay = employment.base_pay;
         const monthly = toMonthlyPay(pay);
-        const payoutAmounts = getPayoutAmounts(monthly);
 
         data.monthly += monthly;
         data.durations.push(duration);
-        data.payouts[account.id] = payoutAmounts;
 
-        if (!isActive(account)) {
-          data.combined.initial += payoutAmounts.initial;
-          data.combined.daily += payoutAmounts.daily;
-        }
+        const result = {
+          account,
+          linkItem,
+          amount: 0.7 * monthly,
+          salary: monthly,
+        };
+
+        data.oneTime.push(result);
       } else {
+        // on demand payment
         const startDate = parseISO(
           account.availability.activities.available_from
         );
@@ -255,15 +225,17 @@ export default async function handler(
         };
 
         const monthly = toMonthlyPay(pay);
-        const payoutAmounts = getPayoutAmounts(monthly);
 
         data.monthly += monthly;
         data.durations.push(duration);
-        data.payouts[account.id] = payoutAmounts;
-        if (!isActive(account)) {
-          data.combined.initial += payoutAmounts.initial;
-          data.combined.daily += payoutAmounts.daily;
-        }
+
+        const result = {
+          account,
+          linkItem,
+          max: monthly / 4,
+        };
+
+        data.onDemand.push(result);
       }
     });
 

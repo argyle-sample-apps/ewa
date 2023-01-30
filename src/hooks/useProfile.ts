@@ -1,6 +1,6 @@
 import axios from "axios";
-import { useGlobalStore } from "stores/global";
 import { useQuery } from "@tanstack/react-query";
+import { getCookie } from "cookies-next";
 import { Profile } from "models/profile";
 
 const fetchProfileById = async (id: string) => {
@@ -10,7 +10,7 @@ const fetchProfileById = async (id: string) => {
 };
 
 export function useProfile() {
-  const userId = useGlobalStore((state) => state.userId);
+  const userId = getCookie("argyle-x-user-id") as string;
 
   return useQuery(["profile", userId], () => fetchProfileById(userId));
 }

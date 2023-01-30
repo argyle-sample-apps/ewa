@@ -1,3 +1,5 @@
+import axios, { AxiosRequestConfig } from "axios";
+
 type PostOpts = {
   method: "POST";
   headers: { [id: string]: string };
@@ -30,12 +32,4 @@ export const getPostOpts = (body?: any) => {
   };
 
   return options;
-};
-
-export const getUnitHeaders = () => {
-  const headers = {
-    Authorization: "Bearer " + process.env.UNIT_API_KEY,
-    "Content-Type": "application/vnd.api+json",
-  };
-  return headers;
 };

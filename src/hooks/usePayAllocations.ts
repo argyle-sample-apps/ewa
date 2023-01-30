@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
+import { getCookie } from "cookies-next";
 import { PayAllocation } from "models/pay-allocation";
-import { useGlobalStore } from "stores/global";
 import { groupBy } from "utils";
 
 const fetchPayAllocationsByUserId = async (userId: string) => {
@@ -13,7 +13,7 @@ const fetchPayAllocationsByUserId = async (userId: string) => {
 };
 
 export function usePayAllocations() {
-  const userId = useGlobalStore((state) => state.userId);
+  const userId = getCookie("argyle-x-user-id") as string;
 
   return useQuery(["pay-allocations", userId], () =>
     fetchPayAllocationsByUserId(userId)

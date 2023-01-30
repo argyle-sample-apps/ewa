@@ -1,6 +1,6 @@
 import { Cell, ResponsiveContainer, PieChart, Pie } from "recharts";
-import { Heading, Subparagraph } from "components/typography";
 import currency from "currency.js";
+import { Heading, Subparagraph } from "components/typography";
 
 type RowProps = {
   label: string;
@@ -11,8 +11,8 @@ type RowProps = {
 function Row({ label, value, color }: RowProps) {
   return (
     <div className="flex items-center justify-between">
-      <Subparagraph className="flex-1 !text-now-darkest">{label}</Subparagraph>
-      <Subparagraph className="!text-now-darkest">
+      <Subparagraph className="flex-1 !text-gray-darkest">{label}</Subparagraph>
+      <Subparagraph className="!text-gray-darkest">
         {currency(value, { precision: 0 }).format()}
       </Subparagraph>
       <div

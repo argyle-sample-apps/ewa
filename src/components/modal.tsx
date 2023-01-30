@@ -17,7 +17,7 @@ export function Modal({ children, className, isOpen, onClose }: ModalProps) {
     <div className={clsx("absolute inset-0", className)}>
       {onClose && (
         <div className="px-3 pt-6 pb-8">
-          <button className="block h-8 w-8 p-1 text-now-grey" onClick={onClose}>
+          <button className="block h-8 w-8 p-1 text-gray" onClick={onClose}>
             <CloseIcon />
           </button>
         </div>

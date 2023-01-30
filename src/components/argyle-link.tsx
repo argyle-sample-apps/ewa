@@ -4,49 +4,58 @@ declare global {
   }
 }
 
-import { useEffect, useState } from "react";
-import Script from "next/script";
-import { useGlobalStore } from "stores/global";
-import { useEphemeralStore } from "stores/ephemeral";
-import { fetchUnitByUserId, useUnit } from "hooks/useUnit";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getCookie, setCookie } from "cookies-next";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
+import { useRouter } from "next/router";
 import {
   CredentialsHints,
   SamplePasswordButton,
 } from "views/credentials-hints";
-import { useQueryClient } from "@tanstack/react-query";
+import { ArgyleLinkProps } from "models/link-config";
+import { clearCookies } from "utils";
+import { linkScriptLoadedAtom } from "stores/global";
 
-type ArgyleLinkProps = {
-  payDistributionUpdateFlow: boolean;
-  onClose: () => void;
+type BaseConfig = Pick<
+  ArgyleLinkProps,
+  | "customizationId"
+  | "linkKey"
+  | "apiHost"
+  | "onUIEvent"
+  | "onTokenExpired"
+  | "userToken"
+>;
+
+type ArgyleLinkCustomConfig = Omit<ArgyleLinkProps, keyof BaseConfig>;
+
+type ArgyleLinkComponentProps = {
+  customConfig: ArgyleLinkCustomConfig;
   onLinkInit: (link: any) => void;
-  linkItemId: string | null;
 };
 
+export type LinkInstance = {
+  id: string;
+  link: any;
+};
+
+const MAX_AGE = { maxAge: 60 * 60 * 24 };
+
 export function ArgyleLink({
-  payDistributionUpdateFlow,
-  onClose,
+  customConfig,
   onLinkInit,
-  linkItemId,
-}: ArgyleLinkProps) {
-  const addAccountId = useGlobalStore((state) => state.addAccountId);
-  const addLinkItemId = useGlobalStore((state) => state.addLinkItemId);
-  const setUser = useGlobalStore((state) => state.setUser);
-  const userToken = useGlobalStore((state) => state.userToken);
-  const isLinkLoaded = useEphemeralStore((state) => state.isLinkScriptLoaded);
-  const confirmLinkIsLoaded = useEphemeralStore(
-    (state) => state.confirmLinkIsLoaded
-  );
+}: ArgyleLinkComponentProps) {
+  const router = useRouter();
 
   const queryClient = useQueryClient();
+  const userToken = getCookie("argyle-x-user-token") as string;
+
+  const isLinkScriptLoaded = useAtomValue(linkScriptLoadedAtom);
 
   const [showHints, setShowHints] = useState(false);
   const [showHintsButton, setShowHintsButton] = useState(false);
 
-  const { data: unit } = useUnit({
-    enabled: payDistributionUpdateFlow,
-  });
-
-  const handleUIEvent = (event: any) => {
+  const handleUIEvent = useCallback((event: any) => {
     switch (event.name) {
       case "search - opened":
       case "success - opened":
@@ -67,77 +76,69 @@ export function ArgyleLink({
       default:
         break;
     }
-  };
+  }, []);
+
+  const handleExpiredToken = useCallback(() => {
+    clearCookies();
+    router.push("/admin");
+  }, [router]);
+
+  const baseConfig: BaseConfig = useMemo(() => {
+    return {
+      customizationId: process.env.NEXT_PUBLIC_ARGYLE_CUSTOMIZATION_ID,
+      linkKey: process.env.NEXT_PUBLIC_ARGYLE_LINK_KEY,
+      apiHost: process.env.NEXT_PUBLIC_ARGYLE_BASE_URL,
+      userToken: userToken || "",
+      onUIEvent: handleUIEvent,
+      onTokenExpired: handleExpiredToken,
+    };
+  }, [handleExpiredToken, handleUIEvent, userToken]);
+
+  const callbacksConfig = useMemo(() => {
+    return {
+      onUserCreated: ({ userId, userToken }: any) => {
+        setCookie("argyle-x-user-id", userId, MAX_AGE);
+        setCookie("argyle-x-user-token", userToken, MAX_AGE);
+      },
+      onAccountCreated: ({ accountId, linkItemId }: any) => {
+        setCookie("argyle-x-account-id", accountId, MAX_AGE);
+        setCookie("argyle-x-link-item-id", linkItemId, MAX_AGE);
+      },
+      onAccountConnected: async ({}: {}) => {
+        queryClient.invalidateQueries();
+      },
+      onAccountUpdated: () => {
+        queryClient.invalidateQueries();
+      },
+      onAccountRemoved: () => {
+        queryClient.invalidateQueries();
+      },
+      onPayDistributionSuccess: () => {
+        queryClient.invalidateQueries();
+      },
+    };
+  }, [queryClient]);
 
   useEffect(() => {
-    if (isLinkLoaded) {
-      const payDistributionOptions = payDistributionUpdateFlow
-        ? {
-            payDistributionUpdateFlow: true,
-            payDistributionConfig: unit?.encryptedConfig,
-            linkItems: [linkItemId],
-          }
-        : {
-            payDistributionUpdateFlow: false,
-            linkItems: [],
-          };
-
+    if (isLinkScriptLoaded) {
       const link = window.Argyle.create({
-        customizationId: process.env.NEXT_PUBLIC_ARGYLE_CUSTOMIZATION_ID,
-        pluginKey: process.env.NEXT_PUBLIC_ARGYLE_LINK_KEY,
-        apiHost: process.env.NEXT_PUBLIC_ARGYLE_BASE_URL,
-        userToken: userToken || "",
-        payDistributionAutoTrigger: true,
-        ...payDistributionOptions,
-        onUserCreated: async ({
-          userId,
-          userToken,
-        }: {
-          userId: string;
-          userToken: string;
-        }) => {
-          setUser(userId, userToken);
-
-          await queryClient.prefetchQuery(["unit", userId], () =>
-            fetchUnitByUserId(userId)
-          );
-        },
-        onAccountConnected: async ({
-          userId,
-          accountId,
-          linkItemId,
-        }: {
-          userId: string;
-          accountId: string;
-          linkItemId: string;
-        }) => {
-          addAccountId(accountId);
-          addLinkItemId(linkItemId);
-          queryClient.invalidateQueries(["accounts"]);
-        },
-        onPayDistributionSuccess: () => {
-          queryClient.invalidateQueries(["accounts"]);
-        },
-        onUIEvent: handleUIEvent,
-        onClose,
+        ...baseConfig,
+        ...callbacksConfig,
+        ...customConfig,
       });
 
       onLinkInit(link);
     }
-  }, [userToken, isLinkLoaded, payDistributionUpdateFlow, linkItemId, unit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLinkScriptLoaded]);
 
   return (
     <>
-      <CredentialsHints isOpen={showHints} />
+      <CredentialsHints showHints={showHints} setShowHints={setShowHints} />
       <SamplePasswordButton
         showHintsButton={showHintsButton}
         showHints={showHints}
         onClick={() => setShowHints(!showHints)}
-      />
-      <Script
-        // src="https://plugin.argyle.com/argyle.web.v3.js"
-        src={process.env.NEXT_PUBLIC_ARGYLE_LINK_SCRIPT}
-        onLoad={() => confirmLinkIsLoaded()}
       />
     </>
   );

@@ -1,4 +1,4 @@
-import { getCookie, setCookies } from "cookies-next";
+import { getCookie, setCookie } from "cookies-next";
 
 type Config = {
   pay: number;
@@ -20,7 +20,7 @@ export function useConfig() {
   if (!cookie) {
     const stringified = JSON.stringify(defaultConfig);
 
-    setCookies("argyle-x-session", stringified, { maxAge: 60 * 6 * 24 });
+    setCookie("argyle-x-session", stringified, { maxAge: 60 * 6 * 24 });
 
     return defaultConfig;
   }
